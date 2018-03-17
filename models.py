@@ -52,5 +52,5 @@ model_dict = create_model_dict()
 
 def numpy_frame_to_cuda(numpy_frame):
     tensor = torch.from_numpy(numpy_frame).cuda().unsqueeze(0)
-    var = Variable(tensor, requires_grad = False, volatile = true)
+    var = Variable(tensor, requires_grad = False, volatile = True)
     return var
