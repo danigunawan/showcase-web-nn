@@ -12,6 +12,8 @@
   </head>
   <body>
     <h1>{{ nn_type }}</h1>
+    <div><span>FPS:</span><span id="fps"></span></div>
+    <img id="output">
     <canvas id="mainCanvas" width="800" height="800"></canvas>
     <canvas id="smallCanvas" widht="{{ camera_size[0] }}" height="{{ camera_size[1] }}" style="visibility: hidden;"></canvas>
     <br>

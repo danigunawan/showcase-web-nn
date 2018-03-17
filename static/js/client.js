@@ -4,6 +4,8 @@ var canvas = null;
 var ctx = null;
 var smallCanvas = null;
 var scctx = null;
+
+var imageSent=false;
 $(function(){
     video = document.getElementById("videoElement");
     canvas = document.getElementById("mainCanvas");
@@ -19,15 +21,23 @@ $(function(){
         navigator.getUserMedia({ video: true }, handleVideo, videoError);
     }
     
-    setInterval(mainLoop, 100);
-    /*setInterval(function() {
-        scctx.drawImage(video, 0, 0, 50, 50);
-        //scctx.putImageData(toSizes(scctx.getImageData(0, 0, 50, 50)), 0, 0);
-        drawBerzanGubbar(toBWArray(scctx.getImageData(0, 0, 50, 50)));
-    }, 100);*/
+    setInterval(mainLoop,10);
+    setInterval(fpsCounter, 1000);
 })
-
 function mainLoop() {
+    if (!imageSent){
+	requestImage()
+    }
+}
+
+function fpsCounter() {
+    $("#fps").text(imagesLastSec)
+    imagesLastSec=0
+
+}
+
+var imagesLastSec=0
+function requestImage() {
     scctx.drawImage(video, 0, 0, cameraSizeX, cameraSizeY);
     imageData=scctx.getImageData(0, 0, cameraSizeX, cameraSizeY)
     var arr = [];
@@ -45,23 +55,19 @@ function mainLoop() {
 	byteArray[j+2]=b
 	j+=3
     }
-    //blob=new Blob([byteArray])
     var xhr = new XMLHttpRequest;
     xhr.open("POST", "/stream/bw/send", false);
+    xhr.onload = function(e) {
+	if (this.status == 200) {
+	    resp=this.response
+	    var image = document.getElementById('output');
+	    image.src = 'data:image/jpeg;base64,' + resp
+	    imagesLastSec++
+    }
+	imageSent=false
+    };
+
     xhr.send(byteArray);
-    /*
-    var fd = new FormData();
-    fd.append('data', blob);
-    $.ajax({
-	type: 'POST',
-	url: '/stream/bw/send',
-	data: fd,
-	processData: false,
-	contentType: false
-    }).done(function(data) {
-	console.log(data);
-    });
-    */
 
 
 }
