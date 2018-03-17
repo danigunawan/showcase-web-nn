@@ -26,8 +26,7 @@ def index(cid):
     if connection == None:
         abort(404)
     
-    camera_size=(int(config["IMAGE"]["size_x"]), int(config["IMAGE"]["size_y"]))
-    frame=np.array(list(request.data)).reshape([*camera_size,4])[:,:,0:3].astype(np.uint8)
+    frame=np.array(list(request.data)).reshape([*camera_size,3]).astype(np.uint8)
     
     connection.push(frame)
     return ""
@@ -149,3 +148,5 @@ class ServerSentEvent(object):
         return "%s\n\n" % "\n".join(lines)
 
 connections={}
+
+camera_size=(int(config["IMAGE"]["size_x"]), int(config["IMAGE"]["size_y"]))

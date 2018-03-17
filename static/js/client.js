@@ -37,11 +37,11 @@ bufferMax=6
 bufferCurrent=0
 imageSent=false
 function mainLoop() {
-    if (!imageSent){
+    //if (!imageSent){
 	if (bufferCurrent < bufferMax) {
 	    requestImage()
 	}
-    }
+    //}
 }
 
 function fpsCounter() {
@@ -51,12 +51,14 @@ function fpsCounter() {
 
 var imagesLastSec=0
 function requestImage() {
+
+    var a = performance.now();
     bufferCurrent++
     $("#buff").text(bufferCurrent)
     imageSent=true
     scctx.drawImage(video, 0, 0, cameraSizeX, cameraSizeY);
     imageData=scctx.getImageData(0, 0, cameraSizeX, cameraSizeY)
-    /*var arr = [];
+    var arr = [];
     for (var i = 0; i < 50; i++) {
         arr[i] = [];
     }
@@ -71,14 +73,17 @@ function requestImage() {
 	byteArray[j+2]=b
 	j+=3
     }
-    */
+    var b = performance.now();
+    alert('It took ' + (b - a) + ' ms.');
+    
     var xhr = new XMLHttpRequest;
     xhr.open("POST", "/stream/"+cid+"/push", false);
     xhr.onload = function(e) {
 	imageSent=false
     };
 
-    xhr.send(imageData.data);
+    //xhr.send(imageData.data);
+    xhr.send(byteArray);
 
 
 }
