@@ -1,13 +1,14 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.autograd import Variable
 from PIL import Image
 import cv2
 import numpy as np
 
 
 def cuda_var_to_image(cuda_frame):
-    frame = cuda_frame.data.unqueeze(0).permute(1,2,0).cpu().numpy().astype(np.uint8)
+    frame = cuda_frame.data.squeeze(0).permute(1,2,0).cpu().numpy().astype(np.uint8)
     im = Image.fromarray(frame)
     return im
 
@@ -30,7 +31,7 @@ class GrayScale(nn.Module):
     
     
     def forward(self, cuda_frame):
-        frame = cuda_frame.data.unqueeze(0).permute(1,2,0).cpu().numpy().astype(np.uint8)
+        frame = cuda_frame.data.squeeze(0).permute(1,2,0).cpu().numpy().astype(np.uint8)
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         frame = np.stack([frame, frame, frame], axis=2)
         im = Image.fromarray(frame)
@@ -47,3 +48,9 @@ def create_model_dict():
 
 
 model_dict = create_model_dict()
+
+
+def numpy_frame_to_cuda(numpy_frame):
+    tensor = torch.from_numpy(numpy_frame).cuda().unsqueeze(0)
+    var = Variable(tensor, requires_grad = False, volatile = true)
+    return var
