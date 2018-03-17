@@ -1,5 +1,20 @@
 <html>
+  <head>
+    <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/client.js') }}"></script>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style/client.css') }}">
+    <script>
+      cameraSizeX={{ camera_size[0] }};
+      cameraSizeY={{ camera_size[1] }};
+
+    </script>
+
+  </head>
   <body>
     <h1>{{ nn_type }}</h1>
+    <canvas id="mainCanvas" width="800" height="800"></canvas>
+    <canvas id="smallCanvas" widht="{{ camera_size[0] }}" height="{{ camera_size[1] }}" style="visibility: hidden;"></canvas>
+    <br>
+    <video autoplay="true" id="videoElement" style="visibility: hidden;"></video>
   </body>
 </html>
