@@ -1,5 +1,29 @@
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
+
+
+class StyleTransfer(nn.Module):
+    def __init__(self):
+        super(StyleTransfer, self).__init__()
+        self.image_transformer_network = torch.load("savedir/model_2_acidcrop_it90k")
+
+    
+    def forward(self, frame):
+        return self.image_transformer_network(frame) * 255
+
+
+class FaceDetection(nn.Module):
+    def __init__(self):
+        super(FaceDetection, self).__init__()
+        self.image_transformer_network = torch.load("savedir/model_2_acidcrop_it90k")
+
+    
+    def forward(self, frame):
+        return self.image_transformer_network(frame) * 255
+
+
+model_dict = {"style transfer" : StyleTransfer().cuda(), "face detection" : StyleTransfer().cuda()}
 
 def nms(boxes, classes, threshhold, use_nms = True):
     """ Perform non-maxima suppression on the boudning boxes
