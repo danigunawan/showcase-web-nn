@@ -21,26 +21,42 @@ $(function(){
         navigator.getUserMedia({ video: true }, handleVideo, videoError);
     }
     
-    setInterval(mainLoop,10);
+    setInterval(mainLoop,5);
+    var imgStream=new EventSource('/stream/'+cid+"/stream")
+
+    imgStream.onmessage = function (e) {
+	image=document.getElementById("output");
+	image.src = 'data:image/jpeg;base64,' + e.data;
+	imagesLastSec++
+	bufferCurrent--
+	$("#buff").text(bufferCurrent)
+    };
     setInterval(fpsCounter, 1000);
 })
+bufferMax=6
+bufferCurrent=0
+imageSent=false
 function mainLoop() {
     if (!imageSent){
-	requestImage()
+	if (bufferCurrent < bufferMax) {
+	    requestImage()
+	}
     }
 }
 
 function fpsCounter() {
     $("#fps").text(imagesLastSec)
     imagesLastSec=0
-
 }
 
 var imagesLastSec=0
 function requestImage() {
+    bufferCurrent++
+    $("#buff").text(bufferCurrent)
+    imageSent=true
     scctx.drawImage(video, 0, 0, cameraSizeX, cameraSizeY);
     imageData=scctx.getImageData(0, 0, cameraSizeX, cameraSizeY)
-    var arr = [];
+    /*var arr = [];
     for (var i = 0; i < 50; i++) {
         arr[i] = [];
     }
@@ -55,19 +71,14 @@ function requestImage() {
 	byteArray[j+2]=b
 	j+=3
     }
+    */
     var xhr = new XMLHttpRequest;
-    xhr.open("POST", "/stream/bw/send", false);
+    xhr.open("POST", "/stream/"+cid+"/push", false);
     xhr.onload = function(e) {
-	if (this.status == 200) {
-	    resp=this.response
-	    var image = document.getElementById('output');
-	    image.src = 'data:image/jpeg;base64,' + resp
-	    imagesLastSec++
-    }
 	imageSent=false
     };
 
-    xhr.send(byteArray);
+    xhr.send(imageData.data);
 
 
 }

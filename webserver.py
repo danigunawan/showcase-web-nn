@@ -17,8 +17,9 @@ def index():
 
 @app.route("/<nn_type>")
 def client(nn_type):
+    connection=stream.create_connection()
     camera_size=(config["IMAGE"]["size_x"], config["IMAGE"]["size_y"])
-    return render_template("client.html",nn_type=nn_type, camera_size=camera_size)
+    return render_template("client.html",nn_type=nn_type, camera_size=camera_size, cid=connection.cid)
 
 
 
