@@ -25,11 +25,11 @@ $(function(){
     var imgStream=new EventSource('/stream/'+cid+"/stream")
 
     imgStream.onmessage = function (e) {
-	image=document.getElementById("output");
-	image.src = 'data:image/jpeg;base64,' + e.data;
 	imagesLastSec++
 	bufferCurrent--
 	$("#buff").text(bufferCurrent)
+	image=document.getElementById("output");
+	image.src = 'data:image/jpeg;base64,' + e.data;
     };
     setInterval(fpsCounter, 1000);
 })
@@ -57,6 +57,10 @@ function requestImage() {
     $("#buff").text(bufferCurrent)
     imageSent=true
     scctx.drawImage(video, 0, 0, cameraSizeX, cameraSizeY);
+
+
+    data= smallCanvas.toDataURL("image/jpeg", c2sJpeg).slice(23)
+    /*
     imageData=scctx.getImageData(0, 0, cameraSizeX, cameraSizeY)
     var arr = [];
     for (var i = 0; i < 50; i++) {
@@ -73,8 +77,8 @@ function requestImage() {
 	byteArray[j+2]=b
 	j+=3
     }
+    */
     var b = performance.now();
-    alert('It took ' + (b - a) + ' ms.');
     
     var xhr = new XMLHttpRequest;
     xhr.open("POST", "/stream/"+cid+"/push", false);
@@ -83,7 +87,7 @@ function requestImage() {
     };
 
     //xhr.send(imageData.data);
-    xhr.send(byteArray);
+    xhr.send(data);
 
 
 }
