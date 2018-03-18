@@ -6,7 +6,9 @@ def reset_config():
     config = configparser.ConfigParser()
     config["IMAGE"]={
         "size_x":256,
-        "size_y":256
+        "size_y":256,
+        "c2s_jpeg":0.8,
+        "s2c_jpeg":0.8
     }
     write_file()
 

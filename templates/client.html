@@ -6,12 +6,21 @@
     <script>
       cameraSizeX={{ camera_size[0] }};
       cameraSizeY={{ camera_size[1] }};
+      cid="{{ cid }}";
+      c2sJpeg={{ c2s_jpeg }};
 
     </script>
 
   </head>
   <body>
     <h1>{{ nn_type }}</h1>
+    <div><span>FPS:</span><span id="fps"></span></div>
+    <div><span>bufffer:</span><span id="buff"></span></div>
+    <img id="output" >
+    <img id="test" >
+    <!---<video autoplay="autoplay" controls onerror="onError()">
+      <source src="/stream/{{ cid }}/stream">
+    </video>-->
     <canvas id="mainCanvas" width="800" height="800"></canvas>
     <canvas id="smallCanvas" widht="{{ camera_size[0] }}" height="{{ camera_size[1] }}" style="visibility: hidden;"></canvas>
     <br>

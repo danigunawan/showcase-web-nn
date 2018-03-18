@@ -4,6 +4,8 @@ var canvas = null;
 var ctx = null;
 var smallCanvas = null;
 var scctx = null;
+
+var imageSent=false;
 $(function(){
     video = document.getElementById("videoElement");
     canvas = document.getElementById("mainCanvas");
@@ -19,16 +21,46 @@ $(function(){
         navigator.getUserMedia({ video: true }, handleVideo, videoError);
     }
     
-    setInterval(mainLoop, 100);
-    /*setInterval(function() {
-        scctx.drawImage(video, 0, 0, 50, 50);
-        //scctx.putImageData(toSizes(scctx.getImageData(0, 0, 50, 50)), 0, 0);
-        drawBerzanGubbar(toBWArray(scctx.getImageData(0, 0, 50, 50)));
-    }, 100);*/
-})
+    setInterval(mainLoop,5);
+    var imgStream=new EventSource('/stream/'+cid+"/stream")
 
+    imgStream.onmessage = function (e) {
+	imagesLastSec++
+	bufferCurrent--
+	$("#buff").text(bufferCurrent)
+	image=document.getElementById("output");
+	image.src = 'data:image/jpeg;base64,' + e.data;
+    };
+    setInterval(fpsCounter, 1000);
+})
+bufferMax=6
+bufferCurrent=0
+imageSent=false
 function mainLoop() {
+    //if (!imageSent){
+	if (bufferCurrent < bufferMax) {
+	    requestImage()
+	}
+    //}
+}
+
+function fpsCounter() {
+    $("#fps").text(imagesLastSec)
+    imagesLastSec=0
+}
+
+var imagesLastSec=0
+function requestImage() {
+
+    var a = performance.now();
+    bufferCurrent++
+    $("#buff").text(bufferCurrent)
+    imageSent=true
     scctx.drawImage(video, 0, 0, cameraSizeX, cameraSizeY);
+
+
+    data= smallCanvas.toDataURL("image/jpeg", c2sJpeg).slice(23)
+    /*
     imageData=scctx.getImageData(0, 0, cameraSizeX, cameraSizeY)
     var arr = [];
     for (var i = 0; i < 50; i++) {
@@ -45,23 +77,17 @@ function mainLoop() {
 	byteArray[j+2]=b
 	j+=3
     }
-    //blob=new Blob([byteArray])
-    var xhr = new XMLHttpRequest;
-    xhr.open("POST", "/stream/bw/send", false);
-    xhr.send(byteArray);
-    /*
-    var fd = new FormData();
-    fd.append('data', blob);
-    $.ajax({
-	type: 'POST',
-	url: '/stream/bw/send',
-	data: fd,
-	processData: false,
-	contentType: false
-    }).done(function(data) {
-	console.log(data);
-    });
     */
+    var b = performance.now();
+    
+    var xhr = new XMLHttpRequest;
+    xhr.open("POST", "/stream/"+cid+"/push", false);
+    xhr.onload = function(e) {
+	imageSent=false
+    };
+
+    //xhr.send(imageData.data);
+    xhr.send(data);
 
 
 }
