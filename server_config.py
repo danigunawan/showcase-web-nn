@@ -5,10 +5,17 @@ def reset_config():
     global config
     config = configparser.ConfigParser()
     config["IMAGE"]={
-        "size_x":256,
-        "size_y":256,
+        "size_x":512,
+        "size_y":512,
         "c2s_jpeg":0.8,
         "s2c_jpeg":0.8
+    }
+    config["SERVER"]={
+        "port":8080,
+        "https":True
+    }
+    config["STREAM"]={
+        "buffer_size":3
     }
     write_file()
 

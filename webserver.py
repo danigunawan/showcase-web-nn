@@ -22,11 +22,15 @@ def client(nn_type):
         abort(404)
     connection=stream.create_connection(models_dict[nn_type])
     camera_size=(config["IMAGE"]["size_x"], config["IMAGE"]["size_y"])
-    return render_template("client.html",nn_type=nn_type, camera_size=camera_size, cid=connection.cid, c2s_jpeg=config["IMAGE"]["c2s_jpeg"])
+    return render_template("client.html",nn_type=nn_type, camera_size=camera_size, cid=connection.cid, c2s_jpeg=config["IMAGE"]["c2s_jpeg"], buffer_size=config["STREAM"]["buffer_size"])
 
 
 
 def start_flask():
     print("\n".join(map(str,app.url_map.iter_rules())))
-    app.run(host= '0.0.0.0',threaded=True,port=8081, ssl_context=('cert.pem', 'key.pem'))
+    if config["SERVER"]["https"]:
+        app.run(host= '0.0.0.0',threaded=True,port=int(config["SERVER"]["port"]), ssl_context=('cert.pem', 'key.pem'))
+    else:
+        app.run(host= '0.0.0.0',threaded=True,port=int(config["SERVER"]["port"]))
+        
     #app.run(host= '0.0.0.0',processes=4,port=8080)
