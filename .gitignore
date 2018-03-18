@@ -1,4 +1,6 @@
 
+cert.pem
+key.pem
 # Created by https://www.gitignore.io/api/emacs,python
 
 ### Emacs ###

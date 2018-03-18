@@ -10,7 +10,7 @@ from PIL import Image
 import base64
 
 from server_config import config
-import models
+from models.models_list import models_dict, numpy_frame_to_cuda
 
 
 stream_app = Blueprint('stream_app', __name__)
@@ -63,8 +63,7 @@ def gen(connection):
 def get_connection(cid):
     return connections.get(cid, None)
 
-def create_connection():
-    model=style_transfer.transform
+def create_connection(model):
     conn_id=str(uuid.uuid1())
     connection=Connection(conn_id, model)
     connections[conn_id]=connection
@@ -91,8 +90,10 @@ class ModelStream:
 
     def __next__(self):
         frame=self.fbq.get_frame()
+        cuda_frame=numpy_frame_to_cuda(frame)
 
-        im = Image.fromarray(self.model(frame))
+        #im = Image.fromarray(self.model(cuda_frame))
+        im = self.model(cuda_frame)
         byte_io = io.BytesIO()
         im.save(byte_io, 'JPEG', quality=jpeg_quality)
         byte_io.seek(0)
@@ -138,4 +139,4 @@ connections={}
 camera_size=(int(config["IMAGE"]["size_x"]), int(config["IMAGE"]["size_y"]))
 jpeg_quality=int(100*float(config["IMAGE"]["s2c_jpeg"]))
 
-print(models.models_dict)
+#print(models_dict)
