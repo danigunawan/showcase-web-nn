@@ -10,7 +10,7 @@ from PIL import Image
 import base64
 
 from server_config import config
-import style_transfer
+import models
 
 
 stream_app = Blueprint('stream_app', __name__)
@@ -137,3 +137,5 @@ connections={}
 
 camera_size=(int(config["IMAGE"]["size_x"]), int(config["IMAGE"]["size_y"]))
 jpeg_quality=int(100*float(config["IMAGE"]["s2c_jpeg"]))
+
+print(models.models_dict)

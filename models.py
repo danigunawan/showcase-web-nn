@@ -6,17 +6,26 @@ from PIL import Image
 import cv2
 import numpy as np
 
+def model():
+    def decorator(f):
+        model_obj = f().cude()
+        model_obj.eval()
+        models_dict[model_obj.name]=model_obj
+        return f
+    return decorator
+models_dict = {}
 
 def cuda_var_to_image(cuda_frame):
     frame = cuda_frame.data.squeeze(0).permute(1,2,0).cpu().numpy().astype(np.uint8)
     im = Image.fromarray(frame)
     return im
 
-
+@model()
 class StyleTransfer(nn.Module):
     def __init__(self):
-        super(StyleTransfer, self).__init__()
-        self.image_transformer_network = torch.load("models/savedir/model_2_acidcrop_it90k")
+        super().__init__()
+        self.name="styletransfer"
+        self.image_transformer_network = torch.load("models/savedir/model_2_acidcrop_it90k.pt")
 
     
     def forward(self, cuda_frame):
@@ -24,10 +33,11 @@ class StyleTransfer(nn.Module):
         im = cuda_var_to_image(stylized_content)
         return im
 
-
+@model()
 class GrayScale(nn.Module):
     def __init__(self):
-        super(GrayScale, self).__init__()
+        super().__init__()
+        self.name="greyscale"
     
     
     def forward(self, cuda_frame):
@@ -38,6 +48,8 @@ class GrayScale(nn.Module):
         return im
 
 
+
+"""
 def create_model_dict():
     style_transfer = StyleTransfer().cuda()
     style_transfer.eval()
@@ -45,9 +57,10 @@ def create_model_dict():
     grayscale.eval()
 
     return {"style transfer" : style_transfer, "grayscale" : grayscale}
+"""
 
 
-model_dict = create_model_dict()
+#model_dict = create_model_dict()
 
 
 def numpy_frame_to_cuda(numpy_frame):
