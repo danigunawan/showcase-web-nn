@@ -27,7 +27,7 @@ class StyleTransfer(nn.Module):
         self.image_transformer_network.load_state_dict(torch.load('models/savedir/styletransfer_acidcrop.pth'))
 
 
-    def forward(self, cuda_frame):
+    def forward(self, cuda_frame, **kwargs):
         stylized_content = self.image_transformer_network(cuda_frame) * 255
         im = cuda_var_to_image(stylized_content)
         return im
@@ -39,7 +39,7 @@ class GrayScale(nn.Module):
         self.name="grayscale"
     
     
-    def forward(self, cuda_frame):
+    def forward(self, cuda_frame, **kwargs):
         frame = cuda_frame.data.squeeze(0).permute(1,2,0).cpu().numpy().astype(np.uint8)
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         frame = np.stack([frame, frame, frame], axis=2)
@@ -56,9 +56,11 @@ class FaceDetection(nn.Module):
         self.facenet.load_state_dict(torch.load("models/savedir/facenet_2_it2k.pth"))
     
     
-    def forward(self, cuda_frame):
+    def forward(self, cuda_frame, **kwargs):
         boxes, classes, anchors = self.facenet(cuda_frame)
-        final_boxes = nms(boxes, classes, threshhold = 0.8, use_nms = True)
+        if kwargs["only_anchors"]==True:
+            boxes = anchors
+        final_boxes = nms(boxes, classes, threshhold = kwargs["threshhold"], use_nms = kwargs["use_nms"])
         im = draw_boxes(cuda_frame, final_boxes, border_size = 4, color = "red")
         return im
 

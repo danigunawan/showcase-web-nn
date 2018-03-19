@@ -2,6 +2,8 @@ import io
 import time
 import uuid
 import threading
+import copy
+import os
 
 from flask import Blueprint, render_template, request, send_file, Response, abort
 import numpy as np
@@ -52,6 +54,16 @@ def stream(cid):
         abort(404)
     #return Response(connection, mimetype='multipart/x-mixed-replace; boundary=frame')
     return Response(connection, mimetype='text/event-stream')
+
+@stream_app.route("/<cid>/setconf/<key>", methods=["POST"])
+def set_conf(cid, key):
+    connection=get_connection(cid)
+    if connection == None:
+        abort(404)
+    #return Response(connection, mimetype='multipart/x-mixed-replace; boundary=frame')
+    connection.set(key, request.data)
+    return "1"
+
 def gen(connection):
     while True:
         for frame in connection:
@@ -73,7 +85,31 @@ def create_connection(model):
 class Connection:
     def __init__(self, cid, model):
         self.cid=cid
-        self.model_stream=ModelStream(FrameBufferQueue(), model)
+        self.model_stream=ModelStream(FrameBufferQueue(), model, self)
+        #self.config=copy.deepcopy(config._sections["NNPARAMS"])
+        self.config={}
+        for k, v in config._sections["NNPARAMS"].items():
+            if v in ["True","False"]:
+                val=v=="True"
+            else:
+                val=float(v)
+            self.config[k]=val
+            
+        #self.config["threshhold"]=float(self.config["threshhold"])
+        #self.config["only_anchors"]=bool(self.config["only_anchors"])
+        #self.config["threshhold"]=bool(self.config["threshhold"])
+
+    def set(self, key, value):
+        value=value.decode()
+
+        if isinstance(self.config[key], float):
+            self.config[key]=float(value)
+            return
+        elif isinstance(self.config[key], bool):
+            self.config[key]=bool(int(value))
+            return
+
+        self.config[key]=value
 
     def __iter__(self):
         return self.model_stream.__iter__()
@@ -81,9 +117,10 @@ class Connection:
         self.model_stream.fbq.push(frame)
         
 class ModelStream:
-    def __init__(self, fbq, model):
+    def __init__(self, fbq, model, connection):
         self.fbq=fbq
         self.model=model
+        self.connection=connection
 
     def __iter__(self):
         return self
@@ -93,7 +130,7 @@ class ModelStream:
         cuda_frame=numpy_frame_to_cuda(frame)
 
         #im = Image.fromarray(self.model(cuda_frame))
-        im = self.model(cuda_frame)
+        im = self.model(cuda_frame, **self.connection.config)
         byte_io = io.BytesIO()
         im.save(byte_io, 'JPEG', quality=jpeg_quality)
         byte_io.seek(0)

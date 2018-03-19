@@ -17,6 +17,12 @@ def reset_config():
     config["STREAM"]={
         "buffer_size":3
     }
+
+    config["NNPARAMS"]={
+        "use_nms":True,
+        "only_anchors":True,
+        "threshhold":0.7
+    }
     write_file()
 
 

@@ -22,7 +22,7 @@ def client(nn_type):
         abort(404)
     connection=stream.create_connection(models_dict[nn_type])
     camera_size=(config["IMAGE"]["size_x"], config["IMAGE"]["size_y"])
-    return render_template("client.html",nn_type=nn_type, camera_size=camera_size, cid=connection.cid, c2s_jpeg=config["IMAGE"]["c2s_jpeg"], buffer_size=config["STREAM"]["buffer_size"])
+    return render_template("client.html", config=connection.config,models=list(models_dict),nn_type=nn_type, camera_size=camera_size, cid=connection.cid, c2s_jpeg=config["IMAGE"]["c2s_jpeg"], buffer_size=config["STREAM"]["buffer_size"])
 
 
 

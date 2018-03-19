@@ -15,6 +15,8 @@
       cid="{{ cid }}";
       bufferMax={{ buffer_size }};
       c2sJpeg={{ c2s_jpeg }};
+      models={{ models|tojson }}
+      config={{ config|tojson }}
 
     </script>
 
@@ -23,6 +25,7 @@
     <div id="container">
     <h1 id="title">{{ nn_type }}</h1>
     <div id="stats">
+      
       <div id="fpsbody"><span>FPS:</span><span id="fps"></span></div>
       <div id="bufferbody"><span>bufffer:</span><span id="buff"></span></div>
     </div>
