@@ -78,7 +78,7 @@ class RegressionHead(nn.Module):
     def __init__(self):
         super(RegressionHead, self).__init__()
         A = 6
-        self.regressor = nn.Conv2d(256, A*4, kernel_size=3, stride=1, padding=1, bias = False)
+        self.regressor = nn.Conv2d(256, A*4, kernel_size=3, stride=1, padding=1, bias = True)
 
         channels = 128
         expansion = 2
@@ -108,7 +108,7 @@ class ClassificationHead(nn.Module):
         self.prior = Parameter(torch.cuda.FloatTensor([[bias]]).expand(A, -1, -1))
         
         self.background = nn.Conv2d(256,   A, kernel_size=3, stride=1, padding=1, bias = False)
-        self.foreground = nn.Conv2d(256, A*K, kernel_size=3, stride=1, padding=1, bias = False)
+        self.foreground = nn.Conv2d(256, A*K, kernel_size=3, stride=1, padding=1, bias = True)
 
         channels = 128
         expansion = 2
