@@ -8,8 +8,6 @@ var scctx = null;
 var imageSent=false;
 $(function(){
     video = document.getElementById("videoElement");
-    canvas = document.getElementById("mainCanvas");
-    ctx = canvas.getContext("2d");
     smallCanvas = document.getElementById("smallCanvas");
     smallCanvas.width=cameraSizeX
     smallCanvas.height=cameraSizeY
