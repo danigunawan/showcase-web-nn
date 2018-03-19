@@ -6,6 +6,7 @@ from PIL import Image
 import cv2
 import numpy as np
 from models.styletransfer import ImageTransformerNetwork
+from models.faceresnet import FaceNet, nms, draw_boxes
 
 def model():
     def decorator(f):
@@ -16,23 +17,16 @@ def model():
     return decorator
 models_dict = {}
 
-def cuda_var_to_image(cuda_frame):
-    frame = cuda_frame.data.squeeze(0).permute(1,2,0).cpu().numpy().astype(np.uint8)
-    im = Image.fromarray(frame)
-    return im
 
 @model()
 class StyleTransfer(nn.Module):
     def __init__(self):
         super().__init__()
         self.name="styletransfer"
-        #self.image_transformer_network = torch.load("models/savedir/model_2_acidcrop_it90k.pt")
         self.image_transformer_network = ImageTransformerNetwork().cuda()
         self.image_transformer_network.load_state_dict(torch.load('models/savedir/styletransfer_acidcrop.pth'))
 
 
-#styletransfer_acidcrop.pth
-    
     def forward(self, cuda_frame):
         stylized_content = self.image_transformer_network(cuda_frame) * 255
         im = cuda_var_to_image(stylized_content)
@@ -42,7 +36,7 @@ class StyleTransfer(nn.Module):
 class GrayScale(nn.Module):
     def __init__(self):
         super().__init__()
-        self.name="greyscale"
+        self.name="grayscale"
     
     
     def forward(self, cuda_frame):
@@ -53,22 +47,29 @@ class GrayScale(nn.Module):
         return im
 
 
-
-"""
-def create_model_dict():
-    style_transfer = StyleTransfer().cuda()
-    style_transfer.eval()
-    grayscale = GrayScale().cuda()
-    grayscale.eval()
-
-    return {"style transfer" : style_transfer, "grayscale" : grayscale}
-"""
-
-
-#model_dict = create_model_dict()
+@model()
+class FaceDetection(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.name="facedetection"
+        self.facenet = FaceNet().cuda()
+        self.facenet.load_state_dict(torch.load("/hdd/Code/pytorch-face-recognition/savedir/facenet_2_it2k.pth"))
+    
+    
+    def forward(self, cuda_frame):
+        boxes, classes, anchors = self.facenet(cuda_frame)
+        final_boxes = nms(boxes, classes, threshhold = 0.8, use_nms = True)
+        im = draw_boxes(cuda_frame, final_boxes, border_size = 4, color = "red")
+        return im
 
 
 def numpy_frame_to_cuda(numpy_frame):
     tensor = torch.from_numpy(numpy_frame).cuda().permute(2,0,1).unsqueeze(0).float()
     var = Variable(tensor, requires_grad = False, volatile = True)
     return var
+
+
+def cuda_var_to_image(cuda_frame):
+    frame = cuda_frame.data.squeeze(0).permute(1,2,0).cpu().numpy().astype(np.uint8)
+    im = Image.fromarray(frame)
+    return im

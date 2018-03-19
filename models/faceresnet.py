@@ -4,9 +4,8 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.nn import Parameter
 from torchvision import models
-
-
 import numpy as np
+from PIL import Image, ImageDraw
 
 class ResNeXtBlock(nn.Module):
     def __init__(self, channels, expansion = 2, cardinality = 32):
@@ -65,22 +64,11 @@ def make_anchors_and_bbox(offsets, classes, anchors_hw, height, width):
 class PredictionHead(nn.Module):
     def __init__(self):
         super(PredictionHead, self).__init__()
-        channels = 128
-        expansion = 2
-        cardinality = 32
-        block_depth = 4
-
-        res_0 = [ResNeXtBlock(channels, expansion, cardinality) for _ in range(block_depth)]
-        upsample = nn.ConvTranspose2d(channels*expansion, channels*expansion, 3, stride=2, padding=1)
-        res_1 = [ResNeXtBlock(channels, expansion, cardinality) for _ in range(block_depth)]
-        self.residual = nn.Sequential(*res_0, upsample, *res_1)
-
         self.regressor = RegressionHead()
         self.classifyer = ClassificationHead()
 
 
     def forward(self, x):
-        x = self.residual(x)
         offsets = self.regressor(x)
         confidences = self.classifyer(x)
         return offsets, confidences
@@ -90,11 +78,22 @@ class RegressionHead(nn.Module):
     def __init__(self):
         super(RegressionHead, self).__init__()
         A = 6
-        self.regressor = nn.Conv2d(256, A*4, kernel_size=3, stride=1, padding=1, bias = True)
+        self.regressor = nn.Conv2d(256, A*4, kernel_size=3, stride=1, padding=1, bias = False)
 
+        channels = 128
+        expansion = 2
+        cardinality = 16
+        block_depth = 2
+
+        res_0 = [ResNeXtBlock(channels, expansion, cardinality) for _ in range(block_depth)]
+        #upsample = nn.ConvTranspose2d(channels*expansion, channels*expansion, 3, stride=2, padding=1)
+        upsample = nn.Upsample(scale_factor=2, mode="bilinear")
+        res_1 = [ResNeXtBlock(channels, expansion, cardinality) for _ in range(block_depth)]
+        self.residual = nn.Sequential(*res_0, upsample, *res_1)
 
     def forward(self, x):
         #x shape [batch_size, 256, H, W]
+        x = self.residual(x)
         x = self.regressor(x)
         return x
 
@@ -104,15 +103,28 @@ class ClassificationHead(nn.Module):
         super(ClassificationHead, self).__init__()
         K = 1
         A = 6
-        pi = 0.001
+        pi = 0.0000001
         bias = np.log(K*(1-pi)/pi)
         self.prior = Parameter(torch.cuda.FloatTensor([[bias]]).expand(A, -1, -1))
         
         self.background = nn.Conv2d(256,   A, kernel_size=3, stride=1, padding=1, bias = False)
-        self.foreground = nn.Conv2d(256, A*K, kernel_size=3, stride=1, padding=1, bias = True)
+        self.foreground = nn.Conv2d(256, A*K, kernel_size=3, stride=1, padding=1, bias = False)
+
+        channels = 128
+        expansion = 2
+        cardinality = 16
+        block_depth = 4
+
+        res_0 = [ResNeXtBlock(channels, expansion, cardinality) for _ in range(block_depth)]
+        #upsample = nn.ConvTranspose2d(channels*expansion, channels*expansion, 3, stride=2, padding=1)
+        upsample = nn.Upsample(scale_factor=2, mode="bilinear")
+        res_1 = [ResNeXtBlock(channels, expansion, cardinality) for _ in range(block_depth)]
+        self.residual = nn.Sequential(*res_0, upsample, *res_1)
+
 
     def forward(self, x):
         #x shape [batch_size, 256, H, W]
+        x = self.residual(x)
         background = self.background(x) + self.prior
         foreground = self.foreground(x)
         return torch.cat((background, foreground), dim=1)
@@ -264,6 +276,28 @@ def nms(boxes, classes, threshhold, use_nms = True):
         boxes = below[mask].view(-1, 4)
 
     return torch.cat(processed_boxes, dim = 0)
+
+
+def draw_boxes(cuda_image, list_boxes, border_size, color):
+    image = cuda_image[0].data.cpu().numpy()
+    image = np.transpose(image, (1, 2, 0))
+    
+    im = Image.fromarray((image).astype(np.uint8))
+    
+    dr = ImageDraw.Draw(im)
+    for box in list_boxes:
+        #box = box[0].cpu().numpy().astype(np.int)
+        box = box.int()
+        x0 = box[0]
+        y0 = box[1]
+        x1 = box[2]
+        y1 = box[3]
+
+        for j in range(border_size):
+            final_coords = [x0+j, y0+j, x1-j, y1-j]
+            dr.rectangle(final_coords, outline = color)
+    return im
+
 
 ###
 ### NEW INTERSECTION OVER UNION (IOU) CODE FROM 
