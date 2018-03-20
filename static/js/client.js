@@ -5,6 +5,8 @@ var ctx = null;
 var smallCanvas = null;
 var scctx = null;
 
+var paused=false
+
 var imageSent=false;
 $(function(){
     video = document.getElementById("videoElement");
@@ -35,6 +37,9 @@ bufferMax=6
 bufferCurrent=0
 imageSent=false
 function mainLoop() {
+    if (paused) {
+	return
+    }
     //if (!imageSent){
 	if (bufferCurrent < bufferMax) {
 	    requestImage()

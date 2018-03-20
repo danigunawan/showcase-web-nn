@@ -23,21 +23,20 @@
   </head>
   <body>
     <div id="container">
-    <h1 id="title">{{ nn_type }}</h1>
-    <div id="stats">
+      <div id="threshholdDialog" title="Set threshhold">
+	<div id="threshholdSlider"></div>
+	<div><span>Thresshold:</span><span id="threshholdValue"></span></div>
+      </div>
+      <h1 id="title">{{ nn_type }}</h1>
+      <div id="stats">
       
-      <div id="fpsbody"><span>FPS:</span><span id="fps"></span></div>
-      <div id="bufferbody"><span>bufffer:</span><span id="buff"></span></div>
+	<div id="fpsbody"><span>FPS:</span><span id="fps"></span></div>
+	<div id="bufferbody"><span>bufffer:</span><span id="buff"></span></div>
+      </div>
+      <img id="output" >
+      <img id="test" >
+      <canvas id="smallCanvas" widht="{{ camera_size[0] }}" height="{{ camera_size[1] }}" style="visibility: hidden;"></canvas>
+      <video autoplay="true" id="videoElement" style="visibility: hidden;"></video>
     </div>
-    <img id="output" >
-    <img id="test" >
-    <!---<video autoplay="autoplay" controls onerror="onError()">
-      <source src="/stream/{{ cid }}/stream">
-    </video>-->
-    <canvas id="smallCanvas" widht="{{ camera_size[0] }}" height="{{ camera_size[1] }}" style="visibility: hidden;"></canvas>
-    <br>
-    <video autoplay="true" id="videoElement" style="visibility: hidden;"></video>
-    </div>
-    <div id="background"></div>
   </body>
 </html>

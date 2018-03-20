@@ -12,13 +12,14 @@ $(function() {
 	preventSelect: true,
 	taphold: true,
 	menu: [
-	    {title: "Copy", cmd: "copy", uiIcon: "ui-icon-copy"},
+	    {cmd: "pause"},
 	    {cmd: "fps"},
 	    {cmd: "buffer"},
 	    {title: "----"},
 	    {title: "Facenet", children:[
 		{cmd:"only_anchors"},
-		{cmd:"use_nms"}
+		{cmd:"use_nms"},
+		{cmd:"threshhold", title:"Set threshhold"}
 	    ]},
 	    {title: "Models", children: menuModels}
 	],
@@ -38,7 +39,14 @@ $(function() {
 		//config["use_nms"]=!config["use_nms"]
 		setConfig("use_nms",!config["use_nms"]? 1:0)
 		break
+	    case "pause":
+		paused=!paused
+		break
+	    case "threshhold":
+		$("#threshholdDialog").dialog("open")
+		break
 	    default:
+		console.log("unknownd cmd "+ui.cmd)
 		break;
 	    }
 	    updateElements()
@@ -55,6 +63,7 @@ $(function() {
 	    //        .contextmenu("replaceMenu", [{title: "aaa"}, {title: "bbb"}])
 	    //        .contextmenu("replaceMenu", "#options2")
 	    //        .contextmenu("setEntry", "cut", {title: "Cuty", uiIcon: "ui-icon-heart", disabled: true})
+		.contextmenu("setEntry", "pause", {uiIcon: pauseIcon(paused), title:paused ? "Play" : "Pause"})
 		.contextmenu("setEntry", "fps", {uiIcon: checkBox(showFPS), title:"Show fps"})
 		.contextmenu("setEntry", "buffer", {uiIcon: checkBox(showBuffer), title:"Show buffer"})
 		.contextmenu("setEntry", "only_anchors", {uiIcon: checkBox(config["only_anchors"]), title:"Only anchors"})
@@ -62,7 +71,27 @@ $(function() {
 	}
     });
     updateElements()
+    $( "#threshholdSlider" ).slider({
+	value:config["threshhold"],
+	min: 0,
+	max: 1,
+	step: 0.01,
+	slide: function( event, ui ) {
+	    $("#threshholdValue").text(ui.value)
+	},
+	stop: function(event, ui) {
+	    setConfig("threshhold", ui.value)
+	}
+
+    });
+    $("#threshholdValue").text(config["threshhold"])
+    $( "#threshholdDialog" ).dialog();
+    $( "#threshholdDialog" ).dialog("close");
 });
+
+function setThreshhold() {
+    
+}
 function updateElements() {
     $("#fpsbody").attr("style",showFPS ? "":"display:none;")
     $("#bufferbody").attr("style",showBuffer ? "":"display:none;")
@@ -79,6 +108,9 @@ function setConfig(key, value) {
 	}
     }
     xhr.send(value);
+}
+function pauseIcon(f) {
+    return f ? "ui-icon ui-icon-play" : "ui-icon ui-icon-pause"
 }
 function checkBox(f) {
     if (f) {
