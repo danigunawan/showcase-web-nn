@@ -30,14 +30,14 @@ $(function() {
 		break;
 	    case "buffer":
 		showBuffer=!showBuffer
-		break;
+		break
 	    case "only_anchors":
 		//config["only_anchors"]=!config["only_anchors"]
-		setConfig("only_anchors",!config["only_anchors"]? 1:0)
+		setConfig("NNPARAMS","only_anchors",config["NNPARAMS"]["only_anchors"]? 0:1)
 		break
 	    case "use_nms":
 		//config["use_nms"]=!config["use_nms"]
-		setConfig("use_nms",!config["use_nms"]? 1:0)
+		setConfig("NNPARAMS","use_nms",config["NNPARAMS"]["use_nms"]? 0:1)
 		break
 	    case "pause":
 		paused=!paused
@@ -66,13 +66,13 @@ $(function() {
 		.contextmenu("setEntry", "pause", {uiIcon: pauseIcon(paused), title:paused ? "Play" : "Pause"})
 		.contextmenu("setEntry", "fps", {uiIcon: checkBox(showFPS), title:"Show fps"})
 		.contextmenu("setEntry", "buffer", {uiIcon: checkBox(showBuffer), title:"Show buffer"})
-		.contextmenu("setEntry", "only_anchors", {uiIcon: checkBox(config["only_anchors"]), title:"Only anchors"})
-		.contextmenu("setEntry", "use_nms", {uiIcon: checkBox(config["use_nms"]), title:"Use nms"})
+		.contextmenu("setEntry", "only_anchors", {uiIcon: checkBox(config["NNPARAMS"]["only_anchors"]), title:"Only anchors"})
+		.contextmenu("setEntry", "use_nms", {uiIcon: checkBox(config["NNPARAMS"]["use_nms"]), title:"Use nms"})
 	}
     });
     updateElements()
     $( "#threshholdSlider" ).slider({
-	value:config["threshhold"],
+	value:config["NNPARAMS"]["threshhold"],
 	min: 0,
 	max: 1,
 	step: 0.01,
@@ -80,13 +80,16 @@ $(function() {
 	    $("#threshholdValue").text(ui.value)
 	},
 	stop: function(event, ui) {
-	    setConfig("threshhold", ui.value)
+	    setConfig("NNPARAMS","threshhold", ui.value)
 	}
 
     });
-    $("#threshholdValue").text(config["threshhold"])
+    $("#threshholdValue").text(config["NNPARAMS"]["threshhold"])
     $( "#threshholdDialog" ).dialog();
     $( "#threshholdDialog" ).dialog("close");
+    $( "#imageDialog" ).dialog();
+    $( "#imageDialog" ).dialog("close");
+
 });
 
 function setThreshhold() {
@@ -97,13 +100,12 @@ function updateElements() {
     $("#bufferbody").attr("style",showBuffer ? "":"display:none;")
 
 }
-function setConfig(key, value) {
+function setConfig(section,key, value) {
     var xhr = new XMLHttpRequest;
-    xhr.open("POST", "/stream/"+cid+"/setconf/"+key, false);
-    //xhr.send(imageData.data);
+    xhr.open("POST", "/stream/"+cid+"/setconf/"+section+"/"+key, false);
     xhr.onload = function(e) {
 	if (xhr.responseText == "1") {
-	    config[key]=value
+	    config[section][key]=value
 	    console.log("config changed")
 	}
     }

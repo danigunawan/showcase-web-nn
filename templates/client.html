@@ -17,7 +17,6 @@
       c2sJpeg={{ c2s_jpeg }};
       models={{ models|tojson }}
       config={{ config|tojson }}
-
     </script>
 
   </head>
@@ -26,6 +25,10 @@
       <div id="threshholdDialog" title="Set threshhold">
 	<div id="threshholdSlider"></div>
 	<div><span>Thresshold:</span><span id="threshholdValue"></span></div>
+      </div>
+      <div id="imageDialog" title="Image settings">
+	<div id="c2sSlider"></div>
+	<div><span>Client to server:</span><span id="c2sValue"></span></div>
       </div>
       <h1 id="title">{{ nn_type }}</h1>
       <div id="stats">

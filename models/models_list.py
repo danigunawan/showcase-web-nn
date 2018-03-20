@@ -57,6 +57,7 @@ class FaceDetection(nn.Module):
     
     
     def forward(self, cuda_frame, **kwargs):
+        print(kwargs)
         boxes, classes, anchors = self.facenet(cuda_frame)
         if kwargs["only_anchors"]==True:
             boxes = anchors

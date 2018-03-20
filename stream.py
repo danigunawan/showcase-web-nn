@@ -40,7 +40,7 @@ def add_frame(cid, data):
     connection=get_connection(cid)
     if connection == None:
         abort(404)
-    camera_size=(int(config["IMAGE"]["size_x"]), int(config["IMAGE"]["size_y"]))
+    camera_size=(int(connection.config["IMAGE"]["size_x"]), int(connection.config["IMAGE"]["size_y"]))
     frame=np.array(list(data)).reshape([*camera_size,4])[:,:,0:3].astype(np.uint8)
     
     connection.push(frame)
@@ -55,13 +55,13 @@ def stream(cid):
     #return Response(connection, mimetype='multipart/x-mixed-replace; boundary=frame')
     return Response(connection, mimetype='text/event-stream')
 
-@stream_app.route("/<cid>/setconf/<key>", methods=["POST"])
-def set_conf(cid, key):
+@stream_app.route("/<cid>/setconf/<section>/<key>", methods=["POST"])
+def set_conf(cid, section,key):
     connection=get_connection(cid)
     if connection == None:
         abort(404)
     #return Response(connection, mimetype='multipart/x-mixed-replace; boundary=frame')
-    connection.set(key, request.data)
+    connection.set(section, key, request.data.decode())
     return "1"
 
 def gen(connection):
@@ -88,28 +88,27 @@ class Connection:
         self.model_stream=ModelStream(FrameBufferQueue(), model, self)
         #self.config=copy.deepcopy(config._sections["NNPARAMS"])
         self.config={}
-        for k, v in config._sections["NNPARAMS"].items():
-            if v in ["True","False"]:
-                val=v=="True"
-            else:
-                val=float(v)
-            self.config[k]=val
+        for section in ["IMAGE", "NNPARAMS", "STREAM"]:
+            self.config[section]={}
+            for k, v in config._sections[section].items():
+                if v in ["True","False"]:
+                    val=v=="True"
+                else:
+                    val=float(v)
+                self.config[section][k]=val
             
-        #self.config["threshhold"]=float(self.config["threshhold"])
-        #self.config["only_anchors"]=bool(self.config["only_anchors"])
-        #self.config["threshhold"]=bool(self.config["threshhold"])
+    def set(self,section, key, value):
+        value=value
+        section=section
 
-    def set(self, key, value):
-        value=value.decode()
-
-        if isinstance(self.config[key], float):
-            self.config[key]=float(value)
+        if isinstance(self.config[section][key], float):
+            self.config[section][key]=float(value)
             return
-        elif isinstance(self.config[key], bool):
-            self.config[key]=bool(int(value))
+        elif isinstance(self.config[section][key], bool):
+            self.config[section][key]=bool(int(value))
             return
 
-        self.config[key]=value
+        self.config[section][key]=value
 
     def __iter__(self):
         return self.model_stream.__iter__()
@@ -130,7 +129,7 @@ class ModelStream:
         cuda_frame=numpy_frame_to_cuda(frame)
 
         #im = Image.fromarray(self.model(cuda_frame))
-        im = self.model(cuda_frame, **self.connection.config)
+        im = self.model(cuda_frame, **self.connection.config["NNPARAMS"])
         byte_io = io.BytesIO()
         im.save(byte_io, 'JPEG', quality=jpeg_quality)
         byte_io.seek(0)

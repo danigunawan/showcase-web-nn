@@ -11,8 +11,8 @@ var imageSent=false;
 $(function(){
     video = document.getElementById("videoElement");
     smallCanvas = document.getElementById("smallCanvas");
-    smallCanvas.width=cameraSizeX
-    smallCanvas.height=cameraSizeY
+    smallCanvas.width=config["IMAGE"]["size_x"]
+    smallCanvas.height=config["IMAGE"]["size_y"]
     scctx = smallCanvas.getContext("2d");
 
     navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.oGetUserMedia;
@@ -41,7 +41,7 @@ function mainLoop() {
 	return
     }
     //if (!imageSent){
-	if (bufferCurrent < bufferMax) {
+	if (bufferCurrent < config["STREAM"]["buffer_size"]) {
 	    requestImage()
 	}
     //}
@@ -59,28 +59,10 @@ function requestImage() {
     bufferCurrent++
     $("#buff").text(bufferCurrent)
     imageSent=true
-    scctx.drawImage(video, 0, 0, cameraSizeX, cameraSizeY);
+    scctx.drawImage(video, 0, 0, config["IMAGE"]["size_x"],  config["IMAGE"]["size_y"]);
 
 
-    data= smallCanvas.toDataURL("image/jpeg", c2sJpeg).slice(23)
-    /*
-    imageData=scctx.getImageData(0, 0, cameraSizeX, cameraSizeY)
-    var arr = [];
-    for (var i = 0; i < 50; i++) {
-        arr[i] = [];
-    }
-    var byteArray = new Uint8Array(cameraSizeX*cameraSizeY*3);
-    var j=0;
-    for (var i = 0; i < imageData.height * imageData.width * 4; i += 4) {
-        var r = imageData.data[i]
-        var g = imageData.data[i + 1]
-        var b = imageData.data[i + 2]
-	byteArray[j]=r
-	byteArray[j+1]=g
-	byteArray[j+2]=b
-	j+=3
-    }
-    */
+    data= smallCanvas.toDataURL("image/jpeg", config["IMAGE"]["c2s_jpeg"]).slice(23)
     var b = performance.now();
     
     var xhr = new XMLHttpRequest;
