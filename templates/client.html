@@ -28,7 +28,24 @@
       </div>
       <div id="imageDialog" title="Image settings">
 	<div id="c2sSlider"></div>
-	<div><span>Client to server:</span><span id="c2sValue"></span></div>
+	<div><span>Client to server JPEG:</span><span id="c2sValue"></span></div>
+
+	<div id="s2cSlider"></div>
+	<div><span>Server to client JPEG:</span><span id="s2cValue"></span></div>
+	<div id="sizeContainer">
+	  <div id="sizeLabelContainer">
+	    <div class="label-container"><span>Width:</span></div>
+	    <div class="label-container"><span>Height:</span></div>
+	  </div>
+	  <div>
+	    <div>
+	      <input id="sizeXInput" type="text" class="size-input">px
+	    </div>
+	    <div>
+	      <input id="sizeYInput" type="text" class="size-input">px
+	    </div>
+	  </div>
+	</div>
       </div>
       <h1 id="title">{{ nn_type }}</h1>
       <div id="stats">

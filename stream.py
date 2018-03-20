@@ -36,17 +36,6 @@ def index(cid):
     connection.push(np.array(image))
     return ""
 
-def add_frame(cid, data):
-    connection=get_connection(cid)
-    if connection == None:
-        abort(404)
-    camera_size=(int(connection.config["IMAGE"]["size_x"]), int(connection.config["IMAGE"]["size_y"]))
-    frame=np.array(list(data)).reshape([*camera_size,4])[:,:,0:3].astype(np.uint8)
-    
-    connection.push(frame)
-    
-
-
 @stream_app.route("/<cid>/stream")
 def stream(cid):
     connection=get_connection(cid)
@@ -62,6 +51,17 @@ def set_conf(cid, section,key):
         abort(404)
     #return Response(connection, mimetype='multipart/x-mixed-replace; boundary=frame')
     connection.set(section, key, request.data.decode())
+    return "1"
+
+@stream_app.route("/<cid>/setmodel/<model>", methods=["POST","GET"])
+def set_model(cid, model):
+    connection=get_connection(cid)
+    if connection == None:
+        abort(404)
+    if not model in models_dict:
+        abort(404)
+
+    connection.model_stream.model=models_dict[model]
     return "1"
 
 def gen(connection):
@@ -131,7 +131,7 @@ class ModelStream:
         #im = Image.fromarray(self.model(cuda_frame))
         im = self.model(cuda_frame, **self.connection.config["NNPARAMS"])
         byte_io = io.BytesIO()
-        im.save(byte_io, 'JPEG', quality=jpeg_quality)
+        im.save(byte_io, 'JPEG', quality=int(self.connection.config["IMAGE"]["s2c_jpeg"]*100))
         byte_io.seek(0)
         return ServerSentEvent(base64.b64encode(byte_io.getvalue()).decode()).encode()
 

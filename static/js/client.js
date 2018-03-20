@@ -10,9 +10,12 @@ var paused=false
 var imageSent=false;
 $(function(){
     video = document.getElementById("videoElement");
-    smallCanvas = document.getElementById("smallCanvas");
+    /*
     smallCanvas.width=config["IMAGE"]["size_x"]
     smallCanvas.height=config["IMAGE"]["size_y"]
+    */
+    smallCanvas = document.getElementById("smallCanvas");
+    updateImageSize()
     scctx = smallCanvas.getContext("2d");
 
     navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.oGetUserMedia;
@@ -33,6 +36,10 @@ $(function(){
     };
     setInterval(fpsCounter, 1000);
 })
+function updateImageSize() {
+    smallCanvas.width=config["IMAGE"]["size_x"]
+    smallCanvas.height=config["IMAGE"]["size_y"]
+}
 bufferMax=6
 bufferCurrent=0
 imageSent=false

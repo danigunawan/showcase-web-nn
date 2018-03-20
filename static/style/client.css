@@ -36,3 +36,14 @@
 
 }
 
+#sizeContainer {
+    display:flex;
+}
+#sizeLabelContainer {
+    justify-content: space-around;
+    display: flex;
+    flex-direction: column;
+}
+.size-input {
+    width: 50px;
+}
