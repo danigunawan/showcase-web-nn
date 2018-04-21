@@ -53,7 +53,7 @@ class FaceDetection(nn.Module):
         super().__init__()
         self.name="facedetection"
         self.facenet = FaceNet().cuda()
-        self.facenet.load_state_dict(torch.load("models/savedir/facenet_2_it2k.pth"))
+        self.facenet.load_state_dict(torch.load("/hdd/Code/pytorch-face-recognition/savedir/facenet_02_it95k.pth"))
     
     
     def forward(self, cuda_frame, **kwargs):
