@@ -174,5 +174,3 @@ connections={}
 
 camera_size=(int(config["IMAGE"]["size_x"]), int(config["IMAGE"]["size_y"]))
 jpeg_quality=int(100*float(config["IMAGE"]["s2c_jpeg"]))
-
-#print(models_dict)

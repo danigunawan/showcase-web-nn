@@ -5,8 +5,8 @@ def reset_config():
     global config
     config = configparser.ConfigParser()
     config["IMAGE"]={
-        "size_x":128*5,
-        "size_y":128*3,
+        "size_x":896,
+        "size_y":504,
         "c2s_jpeg":0.8,
         "s2c_jpeg":0.8
     }
@@ -15,13 +15,13 @@ def reset_config():
         "https":True
     }
     config["STREAM"]={
-        "buffer_size":3
+        "buffer_size":2
     }
 
     config["NNPARAMS"]={
         "use_nms":True,
-        "only_anchors":True,
-        "threshhold":0.7
+        "only_anchors":False,
+        "threshhold":0.4
     }
     write_file()
 
