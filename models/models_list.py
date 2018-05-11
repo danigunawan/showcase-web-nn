@@ -112,12 +112,72 @@ class AutomaticImageCaptioning(nn.Module):
 
 
 @model()
-class StyleTransfer(nn.Module):
+class StyleAcid(nn.Module):
     def __init__(self):
         super().__init__()
-        self.name="styletransfer"
+        self.name="styleacid"
         self.image_transformer_network = ImageTransformerNetwork().cuda()
         self.image_transformer_network.load_state_dict(torch.load('models/savedir/styletransfer_acidcrop.pth'))
+
+
+    def forward(self, cuda_frame, **kwargs):
+        stylized_content = self.image_transformer_network(cuda_frame) * 255
+        im = cuda_var_to_image(stylized_content)
+        return im
+
+
+@model()
+class StyleMosaic(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.name="stylemosaic"
+        self.image_transformer_network = ImageTransformerNetwork().cuda()
+        self.image_transformer_network.load_state_dict(torch.load('models/savedir/style_mosaic.pth'))
+
+
+    def forward(self, cuda_frame, **kwargs):
+        stylized_content = self.image_transformer_network(cuda_frame) * 255
+        im = cuda_var_to_image(stylized_content)
+        return im
+
+
+@model()
+class StylePoly(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.name="stylepoly"
+        self.image_transformer_network = ImageTransformerNetwork().cuda()
+        self.image_transformer_network.load_state_dict(torch.load('models/savedir/style_polycrop.pth'))
+
+
+    def forward(self, cuda_frame, **kwargs):
+        stylized_content = self.image_transformer_network(cuda_frame) * 255
+        im = cuda_var_to_image(stylized_content)
+        return im
+
+
+@model()
+class StylePolyLight(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.name="stylepolylight"
+        self.image_transformer_network = ImageTransformerNetwork().cuda()
+        self.image_transformer_network.load_state_dict(torch.load('models/savedir/style_polycrop_light.pth'))
+
+
+    def forward(self, cuda_frame, **kwargs):
+        stylized_content = self.image_transformer_network(cuda_frame) * 255
+        im = cuda_var_to_image(stylized_content)
+        return im
+
+
+@model()
+class StylePolyLight(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.name="stylepolyheavy"
+        self.image_transformer_network = ImageTransformerNetwork().cuda()
+        self.image_transformer_network.load_state_dict(torch.load('models/savedir/style_polycrop_heavy.pth'))
 
 
     def forward(self, cuda_frame, **kwargs):
