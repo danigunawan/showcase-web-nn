@@ -1,16 +1,13 @@
-#cross conv3-conv7 with bilinear interpolation upsampling, color jitter
+# v2.1 but color jitter
 
 import torch
 import torch.nn as nn
 import torchvision
 from torchvision import models
-import torch.autograd as autograd
-from torch.autograd import Variable
-from torch.nn import Parameter
 import torch.nn.functional as F
 import numpy as np
 
-from PIL import Image, ImageDraw
+device="cuda"
 
 class ResidualBlock(nn.Module):
     def __init__(self, channels, expansion = 4, cardinality = 1):
@@ -22,13 +19,16 @@ class ResidualBlock(nn.Module):
                                    nn.BatchNorm2d(channels),
                                    nn.Conv2d(channels, channels*expansion, kernel_size=1, bias=False),
                                    nn.BatchNorm2d(channels*expansion))
+        
         self.relu = nn.ReLU(inplace = True)
         
         
     def forward(self, x):
         res = x
+
         out = self.block(x)
         out = self.relu(out+res)
+        
         return out
 
 
@@ -59,7 +59,7 @@ class RegressionHead(nn.Module):
         res_0 = [ResidualBlock(channels, expansion, cardinality) for _ in range(block_depth)]
         res_1 = [ResidualBlock(channels, expansion, cardinality) for _ in range(block_depth)]
         self.residual0 = nn.Sequential(*res_0)
-        self.upsample = nn.Upsample(scale_factor=2, mode="bilinear")
+        self.upsample = nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True)
         self.residual1 = nn.Sequential(*res_1)
 
     def forward(self, x):
@@ -77,7 +77,7 @@ class ClassificationHead(nn.Module):
         A = 6
         pi = 0.001
         bias = -np.log((1-pi)/pi)
-        self.prior = Parameter(torch.FloatTensor([[bias]]).expand(A, -1, -1)).contiguous()
+        self.prior = torch.FloatTensor([[bias]]).expand(A, -1, -1).contiguous().cuda()
         
         self.conf_predictions = nn.Conv2d(256,   A, kernel_size=3, stride=1, padding=1, bias = False)
 
@@ -108,7 +108,7 @@ class FaceNet(nn.Module):
         modules_conv4 = list(resnet.children())[6]
         modules_conv5 = list(resnet.children())[7]
         
-        self.input_BN = nn.BatchNorm3d(3)
+        self.input_BN = nn.BatchNorm2d(3)
 
         self.conv3 = nn.Sequential(*modules_conv3)
         self.bottleneck_conv3 = nn.Conv2d(128, 256, kernel_size=1, stride=1, padding=0, bias = True)
@@ -129,21 +129,22 @@ class FaceNet(nn.Module):
 
         self.prediction_head =  PredictionHead()
 
-        self.anchors_wh3 = torch.Tensor([[16, 16],  [16, 16*1.5],
-                                         [20, 20],  [20, 20*1.5],
-                                         [25, 25],  [25, 25*1.5]]).cuda()
-        self.anchors_wh4 = torch.Tensor([[32, 32],  [32, 32*1.5],
-                                         [40, 40],  [40, 40*1.5],
-                                         [51, 51],  [51, 51*1.5]]).cuda()
-        self.anchors_wh5 = torch.Tensor([[64, 64],  [64, 64*1.5],
-                                         [81, 81],  [81, 81*1.5],
-                                         [102, 102],  [102, 102*1.5]]).cuda()
-        self.anchors_wh6 = torch.Tensor([[128, 128],  [128, 128*1.5],
-                                         [161, 161],  [161, 161*1.5],
-                                         [203, 203],  [203, 203*1.5]]).cuda()
-        self.anchors_wh7 = torch.Tensor([[256, 256],  [256, 256*1.5],
-                                         [322, 322],  [322, 322*1.5],
-                                         [406, 406],  [406, 406*1.5]]).cuda()
+        with torch.no_grad():
+            self.anchors_wh3 = torch.Tensor([[16, 16],  [16, 16*1.5],
+                                            [20, 20],  [20, 20*1.5],
+                                            [25, 25],  [25, 25*1.5]]).cuda()
+            self.anchors_wh4 = torch.Tensor([[32, 32],  [32, 32*1.5],
+                                            [40, 40],  [40, 40*1.5],
+                                            [51, 51],  [51, 51*1.5]]).cuda()
+            self.anchors_wh5 = torch.Tensor([[64, 64],  [64, 64*1.5],
+                                            [81, 81],  [81, 81*1.5],
+                                            [102, 102],  [102, 102*1.5]]).cuda()
+            self.anchors_wh6 = torch.Tensor([[128, 128],  [128, 128*1.5],
+                                            [161, 161],  [161, 161*1.5],
+                                            [203, 203],  [203, 203*1.5]]).cuda()
+            self.anchors_wh7 = torch.Tensor([[256, 256],  [256, 256*1.5],
+                                            [322, 322],  [322, 322*1.5],
+                                            [406, 406],  [406, 406*1.5]]).cuda()
 
         self.upsampling = nn.Upsample(scale_factor=2, mode="bilinear")
         
@@ -197,19 +198,20 @@ def make_anchors_and_bbox(offsets, classes, anchors_wh, height, width):
     y_coords = ((torch.arange(H).cuda()+0.5)/H*height).expand(W, H).t()
     coord_grid = torch.stack((x_coords,y_coords), dim = 2) #H-dim, W-dim, (x,y)
     coord_grid = coord_grid.expand(A,-1,-1,-1) #A-dim, H-dim, W-dim, (x,y)
-    coords = coord_grid.contiguous().view(-1, 2) #AHW, 2
+    coords = coord_grid.contiguous().view(-1, 2).float() #AHW, 2
     anch = anchors_wh.unsqueeze(1).expand(-1,H*W,-1).contiguous().view(-1, 2) #AHW, 2
 
     anchors_min = coords - anch/2
     anchors_max = anchors_min + anch
-            
-    anchors = Variable(torch.cat((anchors_min, anchors_max), dim = 1), requires_grad = False)
+    
+    with torch.no_grad():
+        anchors = torch.cat((anchors_min, anchors_max), dim = 1)
     boxes = offsets + anchors
 
     return boxes, classes, anchors
 
 
-def nms(boxes, classes, threshhold, use_nms = True):
+def nms(boxes, classes, threshhold, use_nms = True, softmax = False):
     """ Perform non-maxima suppression on the boudning boxes
     with detection probabilities as scores
     Args:
@@ -218,18 +220,32 @@ def nms(boxes, classes, threshhold, use_nms = True):
     Return:
       (tensor) the resulting bounding boxes efter nms is applied, size [X,4].
     """
-    if len(boxes.size()) == 3:
-        boxes = boxes[0]
-    if len(classes.size()) == 2:
-        classes = classes[0]
+    if softmax:
+        if len(boxes.size()) == 3:
+            boxes = boxes[0]
+        if len(classes.size()) == 3:
+            classes = classes[0]
 
-    classes = F.sigmoid(classes)
-    mask = classes > threshhold
-    idx = mask.nonzero().squeeze()
-    if not len(idx.size()):
-        return [], []
-    selected_boxes = boxes.index_select(0, idx)
-    selected_classes = classes.index_select(0, idx)
+        classes = F.softmax(classes, dim=1)
+        mask = classes > threshhold
+        idx = mask[:, 1].nonzero().squeeze()
+        if not len(idx.size()):
+            return [], []
+        selected_boxes = boxes.index_select(0, idx)
+        selected_classes = classes.index_select(0, idx)[:,1]
+    else:
+        if len(boxes.size()) == 3:
+            boxes = boxes[0]
+        if len(classes.size()) == 2:
+            classes = classes[0]
+
+        classes = F.sigmoid(classes)
+        mask = classes > threshhold
+        idx = mask.nonzero().squeeze()
+        if not len(idx.size()):
+            return [], []
+        selected_boxes = boxes.index_select(0, idx)
+        selected_classes = classes.index_select(0, idx)
     
     if(not use_nms):
         return selected_boxes, selected_classes
@@ -256,8 +272,12 @@ def nms(boxes, classes, threshhold, use_nms = True):
         mask = mask.expand(-1,4)
         boxes = below[mask].view(-1, 4)
         
-    return torch.cat(processed_boxes, dim = 0), torch.cat(processed_confs, dim = 0)
 
+    return torch.cat(processed_boxes, dim = 0), torch.cat(processed_confs, dim = 0)
+    
+def process_draw(threshhold, images, boxes, classes, use_nms = True, border_size = 6, colour = "red", softmax = False):
+    processed_boxes, processed_conf = nms(boxes, classes, threshhold, use_nms, softmax=softmax)
+    return draw_and_show_boxes(images, processed_boxes, border_size, colour)
 
 ###I CANT FIGURE OUT HOW TO FIX MY OWN IOU FUNCTION,
 ###IT IS CORRECT EXCEPT FOR SOME EXAMPLES WHICH IT GIVES IOU>1,

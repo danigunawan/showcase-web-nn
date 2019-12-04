@@ -32,5 +32,3 @@ def start_flask():
         app.run(host= '0.0.0.0',threaded=True,port=int(config["SERVER"]["port"]), ssl_context=('cert.pem', 'key.pem'))
     else:
         app.run(host= '0.0.0.0',threaded=True,port=int(config["SERVER"]["port"]))
-        
-    #app.run(host= '0.0.0.0',processes=4,port=8080)
