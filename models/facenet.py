@@ -77,7 +77,7 @@ class ClassificationHead(nn.Module):
         A = 6
         pi = 0.001
         bias = -np.log((1-pi)/pi)
-        self.prior = torch.FloatTensor([[bias]]).expand(A, -1, -1).contiguous().cuda()
+        self.prior = torch.nn.Parameter(torch.FloatTensor([[bias]]).expand(A, -1, -1).contiguous().cuda())
         
         self.conf_predictions = nn.Conv2d(256,   A, kernel_size=3, stride=1, padding=1, bias = False)
 
@@ -186,7 +186,7 @@ def make_anchors_and_bbox(offsets, classes, anchors_wh, height, width):
     #anchors shape [A, 2]
     #classes shape [batch_size, A, H, W]
     R, A, H, W = classes.size()
-
+    
     #RESHAPE OFFSETS
     offsets = offsets.view(R, 4, A*H*W).permute(0,2,1)
             
@@ -194,11 +194,12 @@ def make_anchors_and_bbox(offsets, classes, anchors_wh, height, width):
     classes = classes.view(R, A*H*W)
             
     #EXPAND CENTER COORDS
-    x_coords = ((torch.arange(W).cuda()+0.5)/W*width).expand(H, W)
-    y_coords = ((torch.arange(H).cuda()+0.5)/H*height).expand(W, H).t()
+    x_coords = ((torch.arange(W).float().cuda()+0.5)/W*width).expand(H, W)
+    y_coords = ((torch.arange(H).float().cuda()+0.5)/H*height).expand(W, H).t()
     coord_grid = torch.stack((x_coords,y_coords), dim = 2) #H-dim, W-dim, (x,y)
-    coord_grid = coord_grid.expand(A,-1,-1,-1) #A-dim, H-dim, W-dim, (x,y)
-    coords = coord_grid.contiguous().view(-1, 2).float() #AHW, 2
+    coord_grid = coord_grid.expand(A,-1,-1,-1).float() #A-dim, H-dim, W-dim, (x,y)
+    coords = coord_grid.contiguous().view(-1, 2) #AHW, 2
+
     anch = anchors_wh.unsqueeze(1).expand(-1,H*W,-1).contiguous().view(-1, 2) #AHW, 2
 
     anchors_min = coords - anch/2
@@ -209,6 +210,14 @@ def make_anchors_and_bbox(offsets, classes, anchors_wh, height, width):
     boxes = offsets + anchors
 
     return boxes, classes, anchors
+
+def torchtensorlen(x):
+    if len(x.size())==0:
+        return 0
+    ans=1
+    for dim in x.size():
+        ans*=dim
+    return ans
 
 
 def nms(boxes, classes, threshhold, use_nms = True, softmax = False):
@@ -229,7 +238,7 @@ def nms(boxes, classes, threshhold, use_nms = True, softmax = False):
         classes = F.softmax(classes, dim=1)
         mask = classes > threshhold
         idx = mask[:, 1].nonzero().squeeze()
-        if not len(idx.size()):
+        if not torchtensorlen(idx):
             return [], []
         selected_boxes = boxes.index_select(0, idx)
         selected_classes = classes.index_select(0, idx)[:,1]
@@ -242,7 +251,7 @@ def nms(boxes, classes, threshhold, use_nms = True, softmax = False):
         classes = F.sigmoid(classes)
         mask = classes > threshhold
         idx = mask.nonzero().squeeze()
-        if not len(idx.size()):
+        if not torchtensorlen(idx):
             return [], []
         selected_boxes = boxes.index_select(0, idx)
         selected_classes = classes.index_select(0, idx)
@@ -256,7 +265,7 @@ def nms(boxes, classes, threshhold, use_nms = True, softmax = False):
 
     processed_boxes = []
     processed_confs = []
-    while len(boxes.size()):
+    while torchtensorlen(boxes):
         highest = boxes[0:1]
         highest_conf = confs[0:1]
         processed_boxes += [highest]

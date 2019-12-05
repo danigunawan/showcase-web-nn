@@ -29,7 +29,6 @@ def index(cid):
         abort(404)
     
     image = Image.open(io.BytesIO(base64.b64decode(request.data)))
-    image.show()
 
     #frame=np.array(list(request.data)).reshape([*camera_size,3]).astype(np.uint8)
     #frame=np.array(list(request.data)).reshape([*camera_size,3]).astype(np.uint8)
@@ -127,7 +126,6 @@ class ModelStream:
 
     def __next__(self):
         frame=self.fbq.get_frame()
-        print("frame", frame)
         cuda_frame=numpy_frame_to_cuda(frame)
 
         #im = Image.fromarray(self.model(cuda_frame))
