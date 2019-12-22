@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 from PIL import Image, ImageDraw
-import cv2
 import numpy as np
 from models.styletransfer import ImageTransformerNetwork
 from models.facenet import FaceNet, nms
@@ -93,16 +92,19 @@ class FaceDetection(nn.Module):
 
     
     def forward(self, cuda_frame, **kwargs):
-        cuda_frame = cuda_frame[:, :, 60:444, :].contiguous()
-        boxes, classes, anchors = self.facenet(cuda_frame)
-        if kwargs["only_anchors"]==True:
-            boxes = anchors
-        final_boxes, final_confs = nms(boxes, classes, threshhold = kwargs["threshhold"], use_nms = kwargs["use_nms"])
-        im = cuda_var_to_image(cuda_frame)
-        self.update_face_deque(final_boxes, im)
-        im = self.draw_boxes_on_image(im, final_boxes)
-        self.draw_on_canvas(im)
-        return Image.fromarray(self.canvas)
+        try:
+            cuda_frame = cuda_frame[:, :, 60:444, :].contiguous()
+            boxes, classes, anchors = self.facenet(cuda_frame)
+            if kwargs["only_anchors"]==True:
+                boxes = anchors
+            final_boxes, final_confs = nms(boxes, classes, threshhold = kwargs["threshhold"], use_nms = kwargs["use_nms"])
+            im = cuda_var_to_image(cuda_frame)
+            self.update_face_deque(final_boxes, im)
+            im = self.draw_boxes_on_image(im, final_boxes)
+            self.draw_on_canvas(im)
+            return Image.fromarray(self.canvas)
+        except Exception:
+            return Image.fromarray(self.canvas)
 
 
 @model()
@@ -114,7 +116,5 @@ class GrayScale(nn.Module):
     
     def forward(self, cuda_frame, **kwargs):
         frame = cuda_frame.data.squeeze(0).permute(1,2,0).cpu().numpy().astype(np.uint8)
-        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-        frame = np.stack([frame, frame, frame], axis=2)
         im = Image.fromarray(frame)
         return im

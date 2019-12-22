@@ -281,7 +281,6 @@ def nms(boxes, classes, threshhold, use_nms = True, softmax = False):
         mask = mask.expand(-1,4)
         boxes = below[mask].view(-1, 4)
         
-
     return torch.cat(processed_boxes, dim = 0), torch.cat(processed_confs, dim = 0)
     
 def process_draw(threshhold, images, boxes, classes, use_nms = True, border_size = 6, colour = "red", softmax = False):

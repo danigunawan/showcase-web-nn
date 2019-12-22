@@ -7,7 +7,6 @@ import os
 
 from flask import Blueprint, render_template, request, send_file, Response, abort
 import numpy as np
-import cv2
 from PIL import Image
 import base64
 
